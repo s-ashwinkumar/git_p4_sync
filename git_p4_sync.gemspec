@@ -9,27 +9,18 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Ashwin Kumar Subramanian"]
   spec.email         = ["s.ashwinkumar2490@gmail.com"]
 
+  spec.summary       = %q{Git to Perforce synchronization}
   spec.description   = %q{This gem can be used to submit all the changes made in a git repository into a perforce repo.}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = "https://github.com/s-ashwinkumar/git_p4_sync"
   spec.license       = "MIT"
 
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
-  # to allow pushing to a single host or delete this section to allow pushing to any host.
-  if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = "TODO: Set to 'http://mygemserver.com'"
-  else
-    raise "RubyGems 2.0 or newer is required to protect against " \
-      "public gem pushes."
-  end
-
-  spec.files         = `git ls-files -z`.split("\x0").reject do |f|
-    f.match(%r{^(test|spec|features)/})
-  end
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.files         = Dir['Rakefile', '{bin,lib,man,spec}/**/*', 'README*', 'LICENSE*'] & `git ls-files -z`.split("\0")
+  # spec.bindir        = "exe"
+  spec.executables = ["git_p4_sync"]
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 1.13"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_dependency "diff_dirs", "~> 0.1.2"
 end

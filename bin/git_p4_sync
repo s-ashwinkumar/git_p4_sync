@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+require "git_p4_sync"
+sync = GitP4Sync::Sync.new
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: git-p4-sync [options]"
+
+  opts.on("-b", "--branch [STRING]", String, "Git origin branch that needs to be synced.") do |o|
+    sync.branch = o
+  end
+
+  opts.on("-g", "--git [STRING]", String, "Path to Git repository. Current directory by default.") do |o|
+    pry
+    sync.git_path = o
+  end
+
+  opts.on("-p", "--p4 [STRING]", String, "Path to Perforce workspace directory") do |o|
+    sync.p4_path = o
+  end
+
+  opts.on("-d", "--diff", "Show the diff between the Git and Perforce repo") do |o|
+    sync.show = o
+  end
+
+  opts.on("-S", "--submit", "Submit to Perforce after processing") do |o|
+    sync.submit = o
+  end
+
+  opts.on("-t", "--test", "Simulates a syncronisation without actually synchrnozing the repos.") do |o|
+    sync.simulate = o
+  end
+
+  opts.on("-i", "--ignore [STRING]", "Items to ignore. This is a colon ':' or comma ',' delimited list") do |o|
+    sync.ignore = o
+  end
+
+end.parse!
+
+sync.exit_with_error("Option --p4 required.") unless sync.p4_path
+sync.exit_with_error("Option --branch required.") unless sync.branch
+
+sync.prepare_for_sync
+sync.run
+sync.cleanup
