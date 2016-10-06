@@ -8,7 +8,10 @@ class Sync
       self.show = false
       self.submit = false
       self.simulate = false
-      self.ignore = false
+      self.ignore = nil
+      # always ignore .git folder because P4 doesnt need it
+      self.ignore_list = [".git"]
+      self.diff_files = []
       self.timestamp = Time.now.utc.to_i
     end
 
@@ -25,17 +28,16 @@ class Sync
       # store current branch name to restore it after the whole process.
       self.current_branch = `git rev-parse --abbrev-ref HEAD`.split("\n").first
 
-
-
       # preparing the files to be ignored.
       prepare_ignored_files
-
+      
       # prepare diff files and reject the ones in ignored.
-      self.diff_files = diff_dirs(p4_path, git_path).reject{|file| is_ignored?(file.last) }
+      self.diff_files.concat(diff_dirs(p4_path, git_path).reject{|file| is_ignored?(file.last) })
       # if no diff, there is nothing to do -- PS : I know ! its not really an error...
       exit_with_error("Directories are identical. Nothing to do.",false) if diff_files.empty?
       # exit if there is a file that has a status other than new, edited or deleted
       # TODO : Check if other status present and handle them
+      
       exit_with_error("Unknown change type present. Task aborted !",false) if (diff_files.collect{|arr| arr.first} - [:new, :deleted, :modified]).any?
 
       # setting up git repo on a new branch with the timestamp.
@@ -79,24 +81,21 @@ class Sync
     end
 
     def prepare_ignored_files
-      # always ignore .git folder because P4 doesnt need it
-      self.ignore_list = [".git"]
-
       # if ignore files provided on commandline add them
       if ignore
         if ignore.include?(":")
-          ignore_list.concat(ignore.split(":"))
+          self.ignore_list.concat(ignore.split(":"))
         elsif ignore.include?(",")
-          ignore_list.concat(ignore.split(","))
+          self.ignore_list.concat(ignore.split(","))
         else
-          ignore_list << ignore
+          self.ignore_list << ignore
         end
       end
 
       # if there is a gitignore file, the files inside also have to be ignored.
       # TODO : gitignore files could be inside directories as well. Need to handle that case.
       if File.exist?(gitignore = File.join(git_path, ".gitignore"))
-        ignore_list = ignore_list.concat(File.read(gitignore).split(/\n/).reject{|i| (i.size == 0) or i.strip.start_with?("#") }.map {|i| i.gsub("*",".*") } )
+        self.ignore_list.concat(File.read(gitignore).split(/\n/).reject{|i| (i.size == 0) or i.strip.start_with?("#") }.map {|i| i.gsub("*",".*") } )
       end
 
     end
@@ -126,8 +125,8 @@ class Sync
             end
             FileUtils.remove_entry_secure(file_path,:force => true)
           when :modified
-            run_cmd "p4 edit '#{p4_path}#{file}'", simulate
             run_cmd "cp '#{git_path}#{file}' '#{p4_path}#{file}'", simulate
+            run_cmd "p4 edit '#{p4_path}#{file}'", simulate
           end
         end
       end

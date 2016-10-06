@@ -7,7 +7,6 @@ require 'fileutils'
 require 'git_p4_sync/sync'
 
 
-
 module GitP4Sync
 
 end
