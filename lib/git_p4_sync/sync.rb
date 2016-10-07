@@ -27,28 +27,32 @@ class Sync
 
       # store current branch name to restore it after the whole process.
       self.current_branch = `git rev-parse --abbrev-ref HEAD`.split("\n").first
-
+      
+      # setting up git repo on a new branch with the timestamp.
+      puts "\n**********************************************************************\n "
+      puts "Preparing for sync.\nThis will create a branch named temp_sync_branch_<timestamp> in local from the given origin branch.\nThis branch will be deleted after the sync."
+      cmd = system("cd #{git_path} && git fetch && git checkout -b temp_sync_branch_#{timestamp} origin/#{branch}")
+      exit_with_error("Cannot checkout, verify if git_path and branch name are correct.") unless cmd
       # preparing the files to be ignored.
       prepare_ignored_files
       
       # prepare diff files and reject the ones in ignored.
       self.diff_files.concat(diff_dirs(p4_path, git_path).reject{|file| is_ignored?(file.last) })
       # if no diff, there is nothing to do -- PS : I know ! its not really an error...
-      exit_with_error("Directories are identical. Nothing to do.",false) if diff_files.empty?
+      if diff_files.empty?
+        puts "Directories are identical. Nothing to do."
+        exit 0
+      end
       # exit if there is a file that has a status other than new, edited or deleted
       # TODO : Check if other status present and handle them
       
       exit_with_error("Unknown change type present. Task aborted !",false) if (diff_files.collect{|arr| arr.first} - [:new, :deleted, :modified]).any?
 
-      # setting up git repo on a new branch with the timestamp.
-      puts "\n**********************************************************************\n "
-      puts "Preparing for sync.\nThis will create a branch named temp_sync_branch_<timestamp> in local from the given origin branch.\nThis branch will be deleted after the sync."
-      cmd = system("cd #{git_path} && git checkout -b temp_sync_branch_#{timestamp} origin/#{branch}")
-      exit_with_error("Cannot checkout, verify if git_path and branch name are correct.") unless cmd
+      
     end
 
     def cleanup
-      result = system("git checkout #{current_branch} && git branch -D temp_sync_branch_#{timestamp}")
+      result = system("cd #{git_path} && git checkout #{current_branch} && git branch -D temp_sync_branch_#{timestamp}")
       puts "\n**********************************************************************\n "
       puts "Could not delete the temp branch. Please delete it manually later." unless result
       puts "Sync process completed. Please follow the logs to trace any discrepancies."
@@ -125,8 +129,8 @@ class Sync
             end
             FileUtils.remove_entry_secure(file_path,:force => true)
           when :modified
-            run_cmd "cp '#{git_path}#{file}' '#{p4_path}#{file}'", simulate
             run_cmd "p4 edit '#{p4_path}#{file}'", simulate
+            run_cmd "cp '#{git_path}#{file}' '#{p4_path}#{file}'", simulate
           end
         end
       end
