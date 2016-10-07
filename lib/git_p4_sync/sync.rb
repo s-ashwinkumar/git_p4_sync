@@ -26,7 +26,7 @@ class Sync
       verify_path_exist!(p4_path)
 
       # store current branch name to restore it after the whole process.
-      self.current_branch = `git rev-parse --abbrev-ref HEAD`.split("\n").first
+      self.current_branch = `cd #{git_path} && git rev-parse --abbrev-ref HEAD`.split("\n").first
       
       # setting up git repo on a new branch with the timestamp.
       puts "\n**********************************************************************\n "
@@ -41,12 +41,13 @@ class Sync
       # if no diff, there is nothing to do -- PS : I know ! its not really an error...
       if diff_files.empty?
         puts "Directories are identical. Nothing to do."
+        cleanup
         exit 0
       end
       # exit if there is a file that has a status other than new, edited or deleted
       # TODO : Check if other status present and handle them
       
-      exit_with_error("Unknown change type present. Task aborted !",false) if (diff_files.collect{|arr| arr.first} - [:new, :deleted, :modified]).any?
+      exit_with_error("Unknown change type present. Task aborted !") if (diff_files.collect{|arr| arr.first} - [:new, :deleted, :modified]).any?
 
       
     end
@@ -105,7 +106,7 @@ class Sync
     end
 
     # generic method to exit with error.
-    def exit_with_error(msg="Exiting for unknown reasons !", clean = true)
+    def exit_with_error(msg="Exiting for unknown reasons.Check the history", clean = true)
       puts msg
       cleanup if clean
       exit 1
@@ -143,8 +144,9 @@ class Sync
         puts "#{puts_prefix}#{cmd}"
       end
       
-      output = ""
-      output = `#{cmd}` unless simulate
+      output = false
+      output = system("#{cmd}") unless simulate
+      exit_with_error unless output
       [output, $?]
     end
     

@@ -34,12 +34,14 @@ describe GitP4Sync::Sync do
   describe "test method running commands" do
     it "runs simuation" do
       expect(STDOUT).to receive(:puts).with("  simulation: pwd")
-      expect(@sync.run_cmd("pwd",true).first).to eq("")
+      expect(@sync).to receive(:exit_with_error)
+      expect(@sync.run_cmd("pwd",true).first).to be false
     end
 
     it "runs without simuation" do
       expect(STDOUT).to receive(:puts).with("  pwd")
-      expect(@sync.run_cmd("pwd").first.strip).to eq(File.expand_path("./"))
+      expect(@sync).to receive(:system).and_return(true)
+      expect(@sync.run_cmd("pwd").first).to be true
     end
   end
 
@@ -90,7 +92,7 @@ describe GitP4Sync::Sync do
 
   describe "clean up method" do
     it "checks for cleanup commands with failure" do
-      expect(@sync).to receive(:system).with("git checkout #{@sync.current_branch} && git branch -D temp_sync_branch_#{@sync.timestamp}").and_return(false)
+      expect(@sync).to receive(:system).with("cd ./ && git checkout #{@sync.current_branch} && git branch -D temp_sync_branch_#{@sync.timestamp}").and_return(false)
       expect(STDOUT).to receive(:puts).with(/\*\*\*\*/)
       expect(STDOUT).to receive(:puts).with("Could not delete the temp branch. Please delete it manually later.")
       expect(STDOUT).to receive(:puts).with("Sync process completed. Please follow the logs to trace any discrepancies.")
@@ -99,7 +101,7 @@ describe GitP4Sync::Sync do
     end
 
     it "checks for cleanup commands with success" do
-      expect(@sync).to receive(:system).with("git checkout #{@sync.current_branch} && git branch -D temp_sync_branch_#{@sync.timestamp}").and_return(true)
+      expect(@sync).to receive(:system).with("cd ./ && git checkout #{@sync.current_branch} && git branch -D temp_sync_branch_#{@sync.timestamp}").and_return(true)
       expect(STDOUT).to receive(:puts).with(/\*\*\*\*/)
       expect(STDOUT).to receive(:puts).with("Sync process completed. Please follow the logs to trace any discrepancies.")
       expect(STDOUT).to receive(:puts).with(/\*\*\*\*/)
@@ -228,7 +230,7 @@ describe GitP4Sync::Sync do
     before(:each) do
       expect(File).to receive(:expand_path).and_return("./", "./")
       expect(@sync).to receive(:add_slash).and_return("./", "./")
-      expect(@sync).to receive(:`).with("git rev-parse --abbrev-ref HEAD").and_return("test_branch")
+      expect(@sync).to receive(:`).with("cd ./ && git rev-parse --abbrev-ref HEAD").and_return("test_branch")
       expect(@sync).to receive(:prepare_ignored_files).once
       expect(@sync).to receive(:verify_path_exist!).exactly(2).times
       expect(STDOUT).to receive(:puts).with(/\*\*\*\*/)
@@ -251,7 +253,7 @@ describe GitP4Sync::Sync do
     
     it "tests with unknown change type" do
       expect(@sync).to receive(:diff_dirs).with("./","./").and_return([[:test,"test"]])
-      expect(@sync).to receive(:exit_with_error).with("Unknown change type present. Task aborted !",false)
+      expect(@sync).to receive(:exit_with_error).with("Unknown change type present. Task aborted !")
       expect(@sync).to receive(:system).and_return(true)
       @sync.prepare_for_sync
     end
