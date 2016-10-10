@@ -26,13 +26,18 @@ class Sync
       verify_path_exist!(p4_path)
 
       # store current branch name to restore it after the whole process.
-      self.current_branch = `cd #{git_path} && git rev-parse --abbrev-ref HEAD`.split("\n").first
+      Dir.chdir(git_path) do
+        self.current_branch = `git rev-parse --abbrev-ref HEAD`.split("\n").first
+      end
       
       # setting up git repo on a new branch with the timestamp.
       puts "\n**********************************************************************\n "
       puts "Preparing for sync.\nThis will create a branch named temp_sync_branch_<timestamp> in local from the given origin branch.\nThis branch will be deleted after the sync."
-      cmd = system("cd #{git_path} && git fetch && git checkout -b temp_sync_branch_#{timestamp} origin/#{branch}")
-      exit_with_error("Cannot checkout, verify if git_path and branch name are correct.") unless cmd
+      Dir.chdir(git_path) do
+        cmd = system("git fetch && git checkout -b temp_sync_branch_#{timestamp} origin/#{branch}")
+        exit_with_error("Cannot checkout, verify if git_path and branch name are correct.") unless cmd
+      end
+
       # preparing the files to be ignored.
       prepare_ignored_files
       
@@ -53,11 +58,13 @@ class Sync
     end
 
     def cleanup
-      result = system("cd #{git_path} && git checkout #{current_branch} && git branch -D temp_sync_branch_#{timestamp}")
-      puts "\n**********************************************************************\n "
-      puts "Could not delete the temp branch. Please delete it manually later." unless result
-      puts "Sync process completed. Please follow the logs to trace any discrepancies."
-      puts "\n**********************************************************************\n "
+      Dir.chdir(git_path) do
+        result = system("git checkout #{current_branch} && git branch -D temp_sync_branch_#{timestamp}")
+        puts "\n**********************************************************************\n "
+        puts "Could not delete the temp branch. Please delete it manually later." unless result
+        puts "Sync process completed. Please follow the logs to trace any discrepancies."
+        puts "\n**********************************************************************\n "
+      end
     end
 
     def show_changes
@@ -75,7 +82,7 @@ class Sync
         handle_files
         git_head_commit = ""
         Dir.chdir(git_path) do
-          git_head_commit = `cd #{git_path} && git show -v -s --pretty=oneline`.split("\n")[0] + " at #{Time.at(timestamp)}"
+          git_head_commit = `git show -v -s --pretty=format:"%s : #{Time.at(timestamp)} : SHA:%H"`
         end
         puts "\n**********************************************************************\n "
         Dir.chdir(p4_path) do
