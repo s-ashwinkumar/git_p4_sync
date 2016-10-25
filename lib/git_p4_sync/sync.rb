@@ -82,7 +82,7 @@ class Sync
         handle_files
         git_head_commit = ""
         Dir.chdir(git_path) do
-          git_head_commit = `git show -v -s --pretty=format:"%s : #{Time.at(timestamp)} : SHA:%H"`
+          git_head_commit = `git show -v -s --pretty=format:"%s : SHA:%H"`
         end
         puts "\n**********************************************************************\n "
         Dir.chdir(p4_path) do
