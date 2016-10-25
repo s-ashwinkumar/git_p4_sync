@@ -32,9 +32,9 @@ class Sync
       
       # setting up git repo on a new branch with the timestamp.
       puts "\n**********************************************************************\n "
-      puts "Preparing for sync.\nThis will create a branch named temp_sync_branch_<timestamp> in local from the given origin branch.\nThis branch will be deleted after the sync."
+      puts "Preparing for sync.\nThis will create a branch named temp_sync_branch_<timestamp> in local from the given branch.\nThis branch will be deleted after the sync."
       Dir.chdir(git_path) do
-        cmd = system("git fetch && git checkout -b temp_sync_branch_#{timestamp} origin/#{branch}")
+        cmd = system("git fetch && git checkout -b temp_sync_branch_#{timestamp} #{branch}")
         exit_with_error("Cannot checkout, verify if git_path and branch name are correct.") unless cmd
       end
 
