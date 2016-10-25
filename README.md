@@ -55,12 +55,12 @@ Available Options :
 ## Example Usage
 This example takes current directory as the gitrepository and synchornizes the changes to the given perforce repository path.
 ```shell
-git_p4_sync -p /path/to/perforce/repository -b master -d --submit
+git_p4_sync -p /path/to/perforce/repository -b origin/master -d --submit
 ```
 
 You can also specify the path to the git repo as a command line argument : 
 ```shell
-git_p4_sync -g path/to/git/repo -p /path/to/perforce/repository -b development -d --submit
+git_p4_sync -g path/to/git/repo -p /path/to/perforce/repository -b origin/development -d --submit
 ```
 ## Dependencies
 
