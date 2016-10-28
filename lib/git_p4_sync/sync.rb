@@ -54,8 +54,9 @@ class Sync
       
       exit_with_error("Unknown change type present. Task aborted !") if (diff_files.collect{|arr| arr.first} - [:new, :deleted, :modified]).any?
 
-      # handle @ charachter in file name and replace with ascii value
-      self.diff_files.each{|element| element.last.gsub!('@','%40')}
+      # UNTESTED CODE. HAVE TO REWORK ON THIS
+      # # handle @ charachter in file name and replace with ascii value
+      # self.diff_files.each{|element| element.last.gsub!('@','%40')}
     end
 
     def cleanup
